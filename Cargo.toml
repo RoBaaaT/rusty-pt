@@ -1,0 +1,8 @@
+[package]
+name = "rusty-pt"
+version = "0.1.0"
+authors = ["Robert Lasch <robert.lasch0@googlemail.com>"]
+edition = "2018"
+
+[dependencies]
+png = "*"
