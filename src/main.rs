@@ -24,7 +24,19 @@ fn main() {
     }
 }
 
+fn hit_sphere(center: math::Vec3, radius: math::Float, ray: math::Ray) -> bool {
+    let oc = ray.origin() - center;
+    let a = math::Vec3::dot(ray.direction(), ray.direction());
+    let b = 2.0 * math::Vec3::dot(oc, ray.direction());
+    let c = math::Vec3::dot(oc, oc) - radius * radius;
+    let discriminant = b * b - 4.0 * a * c;
+    discriminant > 0.0
+}
+
 fn color(ray: math::Ray) -> math::Vec3 {
+    if hit_sphere(math::Vec3::new(0.0, 0.0, -1.0), 0.5, ray) {
+        return math::Vec3::new(1.0, 0.0, 0.0);
+    }
     let unit_direction = math::Vec3::normalize(ray.direction());
     let t = 0.5 * (unit_direction.y() + 1.0);
     (1.0 - t) * math::Vec3::one() + t * math::Vec3::new(0.5, 0.7, 1.0)

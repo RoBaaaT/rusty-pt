@@ -8,6 +8,7 @@ pub struct Vec3 {
     e: [Float; 3]
 }
 
+#[derive(Copy, Clone)]
 pub struct Ray {
     origin: Vec3,
     direction: Vec3
@@ -30,6 +31,10 @@ impl Vec3 {
     pub fn normalize(value: Vec3) -> Vec3 {
         let length = value.length();
         Vec3 { e: [value.e[0] / length, value.e[1] / length, value.e[2] / length] }
+    }
+
+    pub fn dot(a: Vec3, b: Vec3) -> Float {
+        a.e[0] * b.e[0] + a.e[1] * b.e[1] + a.e[2] * b.e[2]
     }
 
     pub fn length(self) -> Float {
@@ -82,6 +87,14 @@ impl ops::Add<Vec3> for Vec3 {
 
     fn add(self, other: Vec3) -> Vec3 {
         Vec3::new(self.e[0] + other.e[0], self.e[1] + other.e[1], self.e[2] + other.e[2])
+    }
+}
+
+impl ops::Sub<Vec3> for Vec3 {
+    type Output = Vec3;
+
+    fn sub(self, other: Vec3) -> Vec3 {
+        Vec3::new(self.e[0] - other.e[0], self.e[1] - other.e[1], self.e[2] - other.e[2])
     }
 }
 
