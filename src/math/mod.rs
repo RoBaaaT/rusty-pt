@@ -1,9 +1,11 @@
 use std::ops;
 use std::fmt;
+use std::f32;
 
 pub type Float = f32;
+pub const MAX_FLOAT: Float = f32::MAX;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct Vec3 {
     e: [Float; 3]
 }
@@ -103,6 +105,14 @@ impl ops::Mul<Vec3> for Float {
 
     fn mul(self, other: Vec3) -> Vec3 {
         Vec3::new(other.e[0] * self, other.e[1] * self, other.e[2] * self)
+    }
+}
+
+impl ops::Div<Float> for Vec3 {
+    type Output = Vec3;
+
+    fn div(self, other: Float) -> Vec3 {
+        Vec3::new(self.e[0] / other, self.e[1] / other, self.e[2] / other)
     }
 }
 

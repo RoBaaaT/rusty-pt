@@ -6,6 +6,8 @@ extern crate png;
 use png::HasParameters;
 
 mod math;
+mod hitable;
+use crate::hitable::*;
 
 fn main() {
     let width = 300;
@@ -24,29 +26,15 @@ fn main() {
     }
 }
 
-fn hit_sphere(center: math::Vec3, radius: math::Float, ray: math::Ray) -> math::Float {
-    let oc = ray.origin() - center;
-    let a = math::Vec3::dot(ray.direction(), ray.direction());
-    let b = 2.0 * math::Vec3::dot(oc, ray.direction());
-    let c = math::Vec3::dot(oc, oc) - radius * radius;
-    let discriminant = b * b - 4.0 * a * c;
-    if discriminant < 0.0 {
-        return -1.0;
+fn color(ray: math::Ray, world: &Vec<&dyn Hitable>) -> math::Vec3 {
+    let mut rec = HitRecord::default();
+    if world.hit(ray, 0.0, math::MAX_FLOAT, &mut rec) {
+        return 0.5 * math::Vec3::new(rec.normal.x() + 1.0, rec.normal.y() + 1.0, rec.normal.z() + 1.0);
     } else {
-        discriminant.sqrt();
-        return (-b - discriminant) / (2.0 * a);
+        let unit_direction = math::Vec3::normalize(ray.direction());
+        let t = 0.5 * (unit_direction.y() + 1.0);
+        return (1.0 - t) * math::Vec3::one() + t * math::Vec3::new(0.5, 0.7, 1.0);
     }
-}
-
-fn color(ray: math::Ray) -> math::Vec3 {
-    let t = hit_sphere(math::Vec3::new(0.0, 0.0, -1.0), 0.5, ray);
-    if t > 0.0 {
-        let N = math::Vec3::normalize(ray.eval(t) - math::Vec3::new(0.0, 0.0, -1.0));
-        return 0.5 * math::Vec3::new(N.x() + 1.0, N.y() + 1.0, N.z() + 1.0);
-    }
-    let unit_direction = math::Vec3::normalize(ray.direction());
-    let t = 0.5 * (unit_direction.y() + 1.0);
-    (1.0 - t) * math::Vec3::one() + t * math::Vec3::new(0.5, 0.7, 1.0)
 }
 
 fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result<()> {
@@ -60,12 +48,15 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
     let horizontal = math::Vec3::new(4.0, 0.0, 0.0);
     let vertical = math::Vec3::new(0.0, 2.0, 0.0);
     let origin = math::Vec3::new(0.0, 0.0, 0.0);
+    let sphere1 = Sphere::new(math::Vec3::new(0.0, 0.0, -1.0), 0.5);
+    let sphere2 = Sphere::new(math::Vec3::new(0.0, -100.5, -1.0), 100.0);
+    let world: Vec<&dyn Hitable> = vec!(&sphere1, &sphere2);
     for x in 0..width {
         for y in 0..height {
             let u = x as math::Float / width as math::Float;
             let v = (height - y) as math::Float / height as math::Float;
             let r = math::Ray::new(origin, lower_left_corner + u * horizontal + v * vertical);
-            let col = color(r);
+            let col = color(r, &world);
             let ir = (col.r() * 255.9) as u8;
             let ig = (col.g() * 255.9) as u8;
             let ib = (col.b() * 255.9) as u8;
