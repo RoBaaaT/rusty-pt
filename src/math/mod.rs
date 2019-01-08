@@ -122,6 +122,12 @@ impl ops::AddAssign<Vec3> for Vec3 {
     }
 }
 
+impl ops::DivAssign<Float> for Vec3 {
+    fn div_assign(&mut self, other: Float) {
+        *self = Vec3::new(self.e[0] / other, self.e[1] / other, self.e[2] / other);
+    }
+}
+
 impl fmt::Display for Vec3 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[{};{};{}]", self.e[0], self.e[1], self.e[2])
