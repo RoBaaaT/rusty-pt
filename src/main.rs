@@ -7,8 +7,10 @@ use png::HasParameters;
 
 mod math;
 mod hitable;
+mod camera;
 use crate::math::*;
 use crate::hitable::*;
+use crate::camera::*;
 
 fn main() {
     let width = 300;
@@ -45,18 +47,15 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
     let mut data = vec![0u8; (width * height * 3) as usize];
 
     // trace rays for each pixel
-    let lower_left_corner = Vec3::new(-2.0, -1.0, -1.0);
-    let horizontal = Vec3::new(4.0, 0.0, 0.0);
-    let vertical = Vec3::new(0.0, 2.0, 0.0);
-    let origin = Vec3::new(0.0, 0.0, 0.0);
     let sphere1 = Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5);
     let sphere2 = Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0);
     let world: Vec<&dyn Hitable> = vec!(&sphere1, &sphere2);
+    let camera = Camera::new();
     for x in 0..width {
         for y in 0..height {
             let u = x as Float / width as Float;
             let v = (height - y) as Float / height as Float;
-            let r = Ray::new(origin, lower_left_corner + u * horizontal + v * vertical);
+            let r = camera.get_ray(u, v);
             let col = color(r, &world);
             let ir = (col.r() * 255.9) as u8;
             let ig = (col.g() * 255.9) as u8;
