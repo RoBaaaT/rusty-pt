@@ -22,8 +22,8 @@ impl Sphere {
     }
 }
 
-impl Hitable for &Vec<&dyn Hitable> {
-    fn hit(&self, ray: Ray, t_min: Float, t_max: Float, rec: &mut HitRecord) -> bool {
+impl Hitable for Vec<&dyn Hitable> {
+fn hit(&self, ray: Ray, t_min: Float, t_max: Float, rec: &mut HitRecord) -> bool {
         let mut temp_rec: HitRecord = HitRecord::default();
         let mut hit_anything = false;
         let mut closest: Float = t_max;
