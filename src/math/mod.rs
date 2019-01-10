@@ -2,6 +2,8 @@ use std::ops;
 use std::fmt;
 use std::f32;
 
+use rand::prelude::*;
+
 pub type Float = f32;
 pub const MAX_FLOAT: Float = f32::MAX;
 
@@ -42,6 +44,10 @@ impl Vec3 {
     pub fn length(self) -> Float {
         let squared_length = self.e[0] * self.e[0] + self.e[1] * self.e[1] + self.e[2] * self.e[2];
         squared_length.sqrt()
+    }
+
+    pub fn length_squared(self) -> Float {
+        self.e[0] * self.e[0] + self.e[1] * self.e[1] + self.e[2] * self.e[2]
     }
 
     pub fn x(&self) -> Float {
@@ -131,5 +137,15 @@ impl ops::DivAssign<Float> for Vec3 {
 impl fmt::Display for Vec3 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[{};{};{}]", self.e[0], self.e[1], self.e[2])
+    }
+}
+
+pub fn random_in_unit_sphere() -> Vec3 {
+    let mut p: Vec3;
+    loop {
+        p = 2.0 * Vec3::new(rand::thread_rng().gen(), rand::thread_rng().gen(), rand::thread_rng().gen()) - Vec3::one();
+        if p.length_squared() < 1.0 {
+            return p
+        }
     }
 }

@@ -35,7 +35,8 @@ fn main() {
 fn color(ray: Ray, world: &Vec<&dyn Hitable>) -> Vec3 {
     let mut rec = HitRecord::default();
     if world.hit(ray, 0.0, MAX_FLOAT, &mut rec) {
-        return 0.5 * Vec3::new(rec.normal.x() + 1.0, rec.normal.y() + 1.0, rec.normal.z() + 1.0);
+        let target = rec.p + rec.normal + random_in_unit_sphere();
+        return 0.5 * color(Ray::new(rec.p, target - rec.p), world);
     } else {
         let unit_direction = Vec3::normalize(ray.direction());
         let t = 0.5 * (unit_direction.y() + 1.0);
@@ -68,6 +69,7 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
                 col += color(r, &world);
             }
             col /= samples as Float;
+            col = Vec3::new(col.r().sqrt(), col.g().sqrt(), col.b().sqrt());
             let ir = (col.r() * 255.9) as u8;
             let ig = (col.g() * 255.9) as u8;
             let ib = (col.b() * 255.9) as u8;
