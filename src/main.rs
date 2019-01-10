@@ -34,7 +34,7 @@ fn main() {
 
 fn color(ray: Ray, world: &Vec<&dyn Hitable>) -> Vec3 {
     let mut rec = HitRecord::default();
-    if world.hit(ray, 0.0, MAX_FLOAT, &mut rec) {
+    if world.hit(ray, 0.001, MAX_FLOAT, &mut rec) {
         let target = rec.p + rec.normal + random_in_unit_sphere();
         return 0.5 * color(Ray::new(rec.p, target - rec.p), world);
     } else {
