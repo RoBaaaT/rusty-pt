@@ -41,6 +41,10 @@ impl Vec3 {
         a.e[0] * b.e[0] + a.e[1] * b.e[1] + a.e[2] * b.e[2]
     }
 
+    pub fn reflect(value: Vec3, normal: Vec3) -> Vec3 {
+        value - 2.0 * Vec3::dot(value, normal) * normal
+    }
+
     pub fn length(self) -> Float {
         let squared_length = self.e[0] * self.e[0] + self.e[1] * self.e[1] + self.e[2] * self.e[2];
         squared_length.sqrt()
