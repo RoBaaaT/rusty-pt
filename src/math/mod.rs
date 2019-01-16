@@ -114,6 +114,15 @@ impl ops::Mul<Vec3> for Float {
     }
 }
 
+impl ops::Mul<Vec3> for Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, other: Vec3) -> Vec3 {
+        Vec3::new(other.e[0] * self.e[0], other.e[1] * self.e[1], other.e[2] * self.e[2])
+    }
+}
+
+
 impl ops::Div<Float> for Vec3 {
     type Output = Vec3;
 
