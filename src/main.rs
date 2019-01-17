@@ -59,12 +59,13 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
 
     // trace rays for each pixel
     let samples = 10;
-    let mat1 = Metal::new(Vec3::new(0.8, 0.6, 0.2));
+    let mat1 = Metal::new(Vec3::new(0.8, 0.6, 0.2), 0.0);
     let mat2 = Lambertian::new(Vec3::new(0.2, 0.3, 1.0));
     let mat3 = Lambertian::new(Vec3::new(0.7, 0.3, 0.2));
+    let mat4 = Metal::new(Vec3::new(0.8, 0.6, 0.2), 0.8);
     let sphere1 = Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, &mat3);
     let sphere2 = Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.5, &mat1);
-    let sphere3 = Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, &mat1);
+    let sphere3 = Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, &mat4);
     let sphere4 = Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0, &mat2);
     let world: Vec<&dyn Hitable> = vec!(&sphere1, &sphere2, &sphere3, &sphere4);
     let camera = Camera::new();
