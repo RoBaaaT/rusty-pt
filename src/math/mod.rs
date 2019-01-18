@@ -45,6 +45,17 @@ impl Vec3 {
         value - 2.0 * Vec3::dot(value, normal) * normal
     }
 
+    pub fn refract(value: Vec3, normal: Vec3, ni_over_nt: Float) -> Option<Vec3> {
+        let unit_value = Vec3::normalize(value);
+        let dt = Vec3::dot(unit_value, normal);
+        let discriminant = 1.0 - ni_over_nt * ni_over_nt * (1.0 - dt * dt);
+        if discriminant > 0.0 {
+            Some(ni_over_nt * (unit_value - dt * normal) - discriminant.sqrt() * normal)
+        } else {
+            None
+        }
+    }
+
     pub fn length(self) -> Float {
         let squared_length = self.e[0] * self.e[0] + self.e[1] * self.e[1] + self.e[2] * self.e[2];
         squared_length.sqrt()
@@ -147,6 +158,14 @@ impl ops::DivAssign<Float> for Vec3 {
     }
 }
 
+impl ops::Neg for Vec3 {
+    type Output = Vec3;
+
+    fn neg(self) -> Vec3 {
+        Vec3::new(-self.e[0], -self.e[1], -self.e[2])
+    }
+}
+
 impl fmt::Display for Vec3 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[{};{};{}]", self.e[0], self.e[1], self.e[2])
@@ -161,4 +180,8 @@ pub fn random_in_unit_sphere() -> Vec3 {
             return p
         }
     }
+}
+
+pub fn random() -> Float {
+    rand::thread_rng().gen()
 }
