@@ -6,6 +6,7 @@ use rand::prelude::*;
 
 pub type Float = f32;
 pub const MAX_FLOAT: Float = f32::MAX;
+pub const PI: Float = f32::consts::PI;
 
 #[derive(Copy, Clone, Default)]
 pub struct Vec3 {
@@ -39,6 +40,10 @@ impl Vec3 {
 
     pub fn dot(a: Vec3, b: Vec3) -> Float {
         a.e[0] * b.e[0] + a.e[1] * b.e[1] + a.e[2] * b.e[2]
+    }
+
+    pub fn cross(a: Vec3, b: Vec3) -> Vec3 {
+        Vec3 { e: [ a.e[1] * b.e[2] - a.e[2] * b.e[1], a.e[2] * b.e[0] - a.e[0] * b.e[2], a.e[0] * b.e[1] - a.e[1] * b.e[0] ] }
     }
 
     pub fn reflect(value: Vec3, normal: Vec3) -> Vec3 {

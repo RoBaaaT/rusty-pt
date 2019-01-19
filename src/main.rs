@@ -69,7 +69,8 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
     let sphere4 = Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0, &mat2);
     let sphere5 = Sphere::new(Vec3::new(-1.0, 0.0, -1.0), -0.45, &mat1);
     let world: Vec<&dyn Hitable> = vec!(&sphere1, &sphere2, &sphere3, &sphere4, &sphere5);
-    let camera = Camera::new();
+    let camera = Camera::new(Vec3::new(-2.0, 2.0, 1.0), Vec3::new(0.0, 0.0, -1.0),
+        Vec3::new(0.0, 1.0, 0.0), 90.0, width as Float / height as Float);
     for x in 0..width {
         for y in 0..height {
             let mut col = Vec3::zero();
