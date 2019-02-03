@@ -5,21 +5,21 @@ pub trait Hitable {
     fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord>;
 }
 
-pub struct HitRecord<'a> {
+pub struct HitRecord {
     pub t: Float,
     pub p: Vec3,
     pub normal: Vec3,
-    pub material: &'a (Material + 'a)
+    pub material: Materials
 }
 
-pub struct Sphere<'a> {
+pub struct Sphere {
     center: Vec3,
     radius: Float,
-    material: &'a Material
+    material: Materials
 }
 
-impl<'a> Sphere<'a> {
-    pub fn new(center: Vec3, radius: Float, material: &'a Material) -> Sphere {
+impl Sphere {
+    pub fn new(center: Vec3, radius: Float, material: Materials) -> Sphere {
         Sphere { center: center, radius: radius, material: material }
     }
 }
@@ -38,7 +38,7 @@ fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
     }
 }
 
-impl<'a> Hitable for Sphere<'a> {
+impl Hitable for Sphere {
     fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
         let oc = ray.origin() - self.center;
         let a = Vec3::dot(ray.direction(), ray.direction());

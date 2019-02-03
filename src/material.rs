@@ -5,15 +5,25 @@ pub trait Material {
     fn scatter(&self, ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray) -> bool;
 }
 
+#[derive(Copy, Clone)]
+pub enum Materials {
+    Lambertian(Lambertian),
+    Metal(Metal),
+    Dielectric(Dielectric)
+}
+
+#[derive(Copy, Clone)]
 pub struct Lambertian {
     pub albedo: Vec3
 }
 
+#[derive(Copy, Clone)]
 pub struct Metal {
     pub albedo: Vec3,
     pub roughness: Float
 }
 
+#[derive(Copy, Clone)]
 pub struct Dielectric {
     pub refractive_index: Float
 }
@@ -34,6 +44,16 @@ impl Metal {
 impl Dielectric {
     pub fn new(refractive_index: Float) -> Dielectric {
         Dielectric { refractive_index: refractive_index }
+    }
+}
+
+impl Material for Materials {
+    fn scatter(&self, ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray) -> bool {
+        match self {
+            Materials::Lambertian(lambertian) => lambertian.scatter(ray_in, rec, attenuation, scattered),
+            Materials::Metal(metal) => metal.scatter(ray_in, rec, attenuation, scattered),
+            Materials::Dielectric(dielectric) => dielectric.scatter(ray_in, rec, attenuation, scattered)
+        }
     }
 }
 
