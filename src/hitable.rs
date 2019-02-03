@@ -5,6 +5,11 @@ pub trait Hitable {
     fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord>;
 }
 
+pub enum Hitables {
+    Sphere(Sphere),
+    List(Vec<Hitables>)
+}
+
 pub struct HitRecord {
     pub t: Float,
     pub p: Vec3,
@@ -24,8 +29,17 @@ impl Sphere {
     }
 }
 
-impl Hitable for Vec<&dyn Hitable> {
-fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
+impl Hitable for Hitables {
+    fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
+        match self {
+            Hitables::Sphere(sphere) => sphere.hit(ray, t_min, t_max),
+            Hitables::List(vector) => vector.hit(ray, t_min, t_max)
+        }
+    }
+}
+
+impl Hitable for Vec<Hitables> {
+    fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
         let mut result: Option<HitRecord> = None;
         let mut closest: Float = t_max;
         for hitable in self.iter() {
