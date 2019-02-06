@@ -6,6 +6,7 @@ use rand::prelude::*;
 
 pub type Float = f32;
 pub const MAX_FLOAT: Float = f32::MAX;
+pub const MIN_FLOAT: Float = f32::MIN;
 pub const PI: Float = f32::consts::PI;
 
 #[derive(Copy, Clone, Default)]
@@ -142,6 +143,25 @@ impl ops::Mul<Vec3> for Vec3 {
     }
 }
 
+impl ops::Index<usize> for Vec3 {
+    type Output = Float;
+
+    fn index(&self, index: usize) -> &Float {
+        if index >= 3 {
+            panic!("invalid index for Vec3 element access");
+        }
+        &self.e[index]
+    }
+}
+
+impl ops::IndexMut<usize> for Vec3 {
+    fn index_mut(&mut self, index: usize) -> &mut Float {
+        if index >= 3 {
+            panic!("invalid index for Vec3 element access");
+        }
+        &mut self.e[index]
+    }
+}
 
 impl ops::Div<Float> for Vec3 {
     type Output = Vec3;
