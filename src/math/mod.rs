@@ -7,6 +7,7 @@ use rand::prelude::*;
 pub type Float = f32;
 pub const MAX_FLOAT: Float = f32::MAX;
 pub const MIN_FLOAT: Float = f32::MIN;
+pub const EPSILON: Float = f32::EPSILON;
 pub const PI: Float = f32::consts::PI;
 
 #[derive(Copy, Clone, Default)]

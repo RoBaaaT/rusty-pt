@@ -7,6 +7,7 @@ pub trait Hitable {
 
 pub enum Hitables {
     Sphere(Sphere),
+    Plane(Plane),
     List(Vec<Hitables>)
 }
 
@@ -23,9 +24,21 @@ pub struct Sphere {
     material: Materials
 }
 
+pub struct Plane {
+    normal: Vec3,
+    distance: Float,
+    material: Materials
+}
+
 impl Sphere {
     pub fn new(center: Vec3, radius: Float, material: Materials) -> Sphere {
         Sphere { center: center, radius: radius, material: material }
+    }
+}
+
+impl Plane {
+    pub fn new(normal: Vec3, distance: Float, material: Materials) -> Plane {
+        Plane { normal: Vec3::normalize(normal), distance: distance, material: material }
     }
 }
 
@@ -33,6 +46,7 @@ impl Hitable for Hitables {
     fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
         match self {
             Hitables::Sphere(sphere) => sphere.hit(ray, t_min, t_max),
+            Hitables::Plane(plane) => plane.hit(ray, t_min, t_max),
             Hitables::List(vector) => vector.hit(ray, t_min, t_max)
         }
     }
@@ -73,5 +87,25 @@ impl Hitable for Sphere {
             }
         }
         None
+    }
+}
+
+impl Hitable for Plane {
+    fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
+        let denom = Vec3::dot(ray.direction(), self.normal);
+        if denom.abs() <= EPSILON {
+            None
+        } else {
+            let plane_to_origin = self.distance * self.normal - ray.origin();
+            let t = Vec3::dot(plane_to_origin, self.normal) / denom;
+            if t >= t_min && t <= t_max {
+                Some(HitRecord {
+                    t: t, p: ray.origin() + t * ray.direction(),
+                    normal: self.normal,
+                    material: self.material })
+            } else {
+                None
+            }
+        }
     }
 }

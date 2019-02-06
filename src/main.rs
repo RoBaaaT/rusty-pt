@@ -120,17 +120,19 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
     let mat2 = Materials::Lambertian(Lambertian::new(Vec3::new(0.2, 0.3, 1.0)));
     let mat3 = Materials::Lambertian(Lambertian::new(Vec3::new(0.7, 0.3, 0.2)));
     let mat4 = Materials::Metal(Metal::new(Vec3::new(0.8, 0.6, 0.2), 0.8));
+    let mat5 = Materials::Lambertian(Lambertian::new(Vec3::new(0.6, 0.2, 0.2)));
     let sphere1 = Hitables::Sphere(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, mat3));
     let sphere2 = Hitables::Sphere(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.5, mat1));
     let sphere3 = Hitables::Sphere(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, mat4));
-    let sphere4 = Hitables::Sphere(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0, mat2));
+    let ground = Hitables::Plane(Plane::new(Vec3::new(0.0, 1.0, 0.0), -0.5, mat2));
+    let wall = Hitables::Plane(Plane::new(Vec3::new(0.0, 0.0, 1.0), -2.0, mat5));
     let sphere5 = Hitables::Sphere(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), -0.45, mat1));
-    let world = Arc::new(Hitables::List(vec!(sphere1, sphere2, sphere3, sphere4, sphere5)));
-    let look_from = Vec3::new(-2.0, 2.0, 1.0);
+    let world = Arc::new(Hitables::List(vec!(sphere1, sphere2, sphere3, ground, sphere5, wall)));
+    let look_from = Vec3::new(-2.0, 1.0, 1.0);
     let look_at = Vec3::new(0.0, 0.0, -1.0);
     let camera = Arc::new(Camera::new(look_from, look_at, Vec3::new(0.0, 1.0, 0.0), 40.0,
         width as Float / height as Float,
-        0.5, (look_from - look_at).length()));
+        0.0, (look_from - look_at).length()));
 
     // start render threads
     let mut thread_handles = Vec::new();
