@@ -8,6 +8,7 @@ pub trait Hitable {
 pub enum Hitables {
     Sphere(Sphere),
     Plane(Plane),
+    Triangle(Triangle),
     List(Vec<Hitables>)
 }
 
@@ -30,6 +31,13 @@ pub struct Plane {
     material: Materials
 }
 
+pub struct Triangle {
+    p0: Vec3,
+    p1: Vec3,
+    p2: Vec3,
+    material: Materials
+}
+
 impl Sphere {
     pub fn new(center: Vec3, radius: Float, material: Materials) -> Sphere {
         Sphere { center: center, radius: radius, material: material }
@@ -42,11 +50,18 @@ impl Plane {
     }
 }
 
+impl Triangle {
+    pub fn new(p0: Vec3, p1: Vec3, p2:Vec3, material: Materials) -> Triangle {
+        Triangle { p0: p0, p1: p1, p2: p2, material: material }
+    }
+}
+
 impl Hitable for Hitables {
     fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
         match self {
             Hitables::Sphere(sphere) => sphere.hit(ray, t_min, t_max),
             Hitables::Plane(plane) => plane.hit(ray, t_min, t_max),
+            Hitables::Triangle(triangle) => triangle.hit(ray, t_min, t_max),
             Hitables::List(vector) => vector.hit(ray, t_min, t_max)
         }
     }
@@ -105,6 +120,41 @@ impl Hitable for Plane {
                     material: self.material })
             } else {
                 None
+            }
+        }
+    }
+}
+
+impl Hitable for Triangle {
+    fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
+        let edge1 = self.p1 - self.p0;
+        let edge2 = self.p2 - self.p0;
+        let h = Vec3::cross(ray.direction(), edge2);
+        let a = Vec3::dot(edge1, h);
+        if a.abs() <= EPSILON {
+            None
+        } else {
+            let f = 1.0 / a;
+            let s = ray.origin() - self.p0;
+            let u = f * Vec3::dot(s, h);
+            if u < 0.0 || u > 1.0 {
+                None
+            } else {
+                let q = Vec3::cross(s, edge1);
+                let v = f * Vec3::dot(ray.direction(), q);
+                if v < 0.0 || u + v > 1.0 {
+                    None
+                } else {
+                    let t = f * Vec3::dot(edge2, q);
+                    if t > t_min && t < t_max {
+                        Some(HitRecord {
+                            t: t, p: ray.origin() + t * ray.direction(),
+                            normal: Vec3::normalize(Vec3::cross(edge1, edge2)),
+                            material: self.material })
+                    } else {
+                        None
+                    }
+                }
             }
         }
     }
