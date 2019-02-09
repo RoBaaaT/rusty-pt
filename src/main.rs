@@ -161,13 +161,13 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
     }
 
     let mut progress_bar = progress::Bar::new();
-    progress_bar.set_job_title("Rendering...");
+    progress_bar.set_job_title("Rendering");
 
     for rendered_tiles in 0..tile_count {
         rx.recv().unwrap();
-        progress_bar.reach_percent(((rendered_tiles as f32 / tile_count as f32) * 100.0) as i32);
+        progress_bar.set_job_title(&format!("Rendering ({}/{} tiles complete)", rendered_tiles + 1, tile_count));
+        progress_bar.reach_percent((((rendered_tiles + 1) as f32 / tile_count as f32) * 100.0) as i32);
     }
-    progress_bar.reach_percent(100);
 
     for handle in thread_handles {
         handle.join().unwrap();
