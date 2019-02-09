@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 png = "*"
 rand = "*"
+progress = "0.2"

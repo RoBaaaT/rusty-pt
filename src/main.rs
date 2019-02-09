@@ -2,9 +2,12 @@ use std::error::Error;
 use std::path::Path;
 use std::fs::File;
 use std::sync::{Arc, Mutex, RwLock};
+use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc;
 use std::thread;
 
 extern crate rand;
+extern crate progress;
 use rand::prelude::*;
 
 extern crate png;
@@ -30,8 +33,8 @@ struct RenderTile {
 }
 
 fn main() {
-    let width = 300;
-    let height = 150;
+    let width = 1920 / 2;
+    let height = 1080 / 2;
 
     let path = Path::new("out/out.png");
     let path_display = path.display();
@@ -62,7 +65,7 @@ fn color(ray: Ray, world: &Hitable, depth: u16) -> Vec3 {
     }
 }
 
-fn render_thread(width: u32, height: u32, tiles: Arc<Mutex<Vec<RenderTile>>>, samples: usize,
+fn render_thread(channel: Sender<bool>, width: u32, height: u32, tiles: Arc<Mutex<Vec<RenderTile>>>, samples: usize,
         world: Arc<Hitable>, camera: Arc<Camera>, out: Arc<RwLock<Vec<u8>>>) {
     loop {
         let t = tiles.lock().unwrap().pop();
@@ -91,6 +94,7 @@ fn render_thread(width: u32, height: u32, tiles: Arc<Mutex<Vec<RenderTile>>>, sa
                     data[((global_y * width + global_x) * 3 + 2) as usize] = ib;
                 }
             }
+            channel.send(true).unwrap();
         } else {
             return;
         }
@@ -113,6 +117,7 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
             tiles.lock().unwrap().push(RenderTile { left: x, top: y, width: tile_width, height: tile_height });
         }
     }
+    let mut tile_count = tiles.lock().unwrap().len();
 
     // scene setup
     let samples = 100;
@@ -141,17 +146,28 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
 
     // start render threads
     let mut thread_handles = Vec::new();
+    let (tx, rx) = mpsc::channel();
     for _ in 0..8 {
         let thread_tiles = Arc::clone(&tiles);
         let thread_world = Arc::clone(&world);
         let thread_camera = Arc::clone(&camera);
         let thread_data = Arc::clone(&data);
+        let thread_tx = tx.clone();
 
         let handle = thread::spawn(move || {
-            render_thread(width, height, thread_tiles, samples, thread_world, thread_camera, thread_data);
+            render_thread(thread_tx, width, height, thread_tiles, samples, thread_world, thread_camera, thread_data);
         });
         thread_handles.push(handle);
     }
+
+    let mut progress_bar = progress::Bar::new();
+    progress_bar.set_job_title("Rendering...");
+
+    for rendered_tiles in 0..tile_count {
+        rx.recv().unwrap();
+        progress_bar.reach_percent(((rendered_tiles as f32 / tile_count as f32) * 100.0) as i32);
+    }
+    progress_bar.reach_percent(100);
 
     for handle in thread_handles {
         handle.join().unwrap();
