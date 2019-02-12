@@ -50,12 +50,12 @@ fn main() {
     }
 }
 
-fn color(ray: Ray, world: &Hitable, depth: u16) -> Vec3 {
+fn color(ray: &Ray, world: &Hitable, depth: u16) -> Vec3 {
     if let Some(rec) = world.hit(ray, 0.001, MAX_FLOAT) {
         let mut scattered: Ray = Ray::new(Vec3::zero(), Vec3::zero());
         let mut attenuation: Vec3 = Vec3::zero();
         if depth < 50 && rec.material.scatter(&ray, &rec, &mut attenuation, &mut scattered) {
-            return attenuation * color(scattered, world, depth + 1);
+            return attenuation * color(&scattered, world, depth + 1);
         } else {
             return Vec3::zero();
         }
@@ -82,7 +82,7 @@ fn render_thread(channel: Sender<bool>, width: u32, height: u32, tiles: Arc<Mute
                         let u = (global_x as Float + ur) / width as Float;
                         let v = ((height - global_y) as Float - vr) / height as Float;
                         let r = camera.get_ray(u, v);
-                        col += color(r, &*world, 0);
+                        col += color(&r, &*world, 0);
                     }
                     col /= samples as Float;
                     col = Vec3::new(col.r().sqrt(), col.g().sqrt(), col.b().sqrt());

@@ -2,7 +2,7 @@ use super::math::*;
 use super::material::*;
 
 pub trait Hitable {
-    fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord>;
+    fn hit(&self, ray: &Ray, t_min: Float, t_max: Float) -> Option<HitRecord>;
 }
 
 pub enum Hitables {
@@ -57,7 +57,7 @@ impl Triangle {
 }
 
 impl Hitable for Hitables {
-    fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
         match self {
             Hitables::Sphere(sphere) => sphere.hit(ray, t_min, t_max),
             Hitables::Plane(plane) => plane.hit(ray, t_min, t_max),
@@ -68,7 +68,7 @@ impl Hitable for Hitables {
 }
 
 impl Hitable for Vec<Hitables> {
-    fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
         let mut result: Option<HitRecord> = None;
         let mut closest: Float = t_max;
         for hitable in self.iter() {
@@ -82,7 +82,7 @@ impl Hitable for Vec<Hitables> {
 }
 
 impl Hitable for Sphere {
-    fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
         let oc = ray.origin() - self.center;
         let a = Vec3::dot(ray.direction(), ray.direction());
         let b = Vec3::dot(oc, ray.direction());
@@ -106,7 +106,7 @@ impl Hitable for Sphere {
 }
 
 impl Hitable for Plane {
-    fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
         let denom = Vec3::dot(ray.direction(), self.normal);
         if denom.abs() <= EPSILON {
             None
@@ -126,7 +126,7 @@ impl Hitable for Plane {
 }
 
 impl Hitable for Triangle {
-    fn hit(&self, ray: Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
         let edge1 = self.p1 - self.p0;
         let edge2 = self.p2 - self.p0;
         let h = Vec3::cross(ray.direction(), edge2);
