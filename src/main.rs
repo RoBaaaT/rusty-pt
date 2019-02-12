@@ -119,7 +119,7 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
             tiles.lock().unwrap().push(RenderTile { left: x, top: y, width: tile_width, height: tile_height });
         }
     }
-    let mut tile_count = tiles.lock().unwrap().len();
+    let tile_count = tiles.lock().unwrap().len();
 
     // scene setup
     let samples = 100;
@@ -174,7 +174,7 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
     }
     let elapsed_render = start_render.elapsed();
 
-    println!("setup: \t{}.{:03} s", elapsed_setup.as_secs(), elapsed_setup.subsec_nanos() / 1000000);
+    println!("setup: \t{}.{:09} s", elapsed_setup.as_secs(), elapsed_setup.subsec_nanos() / 1000000);
     println!("render:\t{}.{:03} s", elapsed_render.as_secs(), elapsed_render.subsec_nanos() / 1000000);
 
     for handle in thread_handles {
