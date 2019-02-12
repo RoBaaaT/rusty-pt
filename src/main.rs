@@ -2,9 +2,10 @@ use std::error::Error;
 use std::path::Path;
 use std::fs::File;
 use std::sync::{Arc, Mutex, RwLock};
-use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc::Sender;
 use std::sync::mpsc;
 use std::thread;
+use std::time::Instant;
 
 extern crate rand;
 extern crate progress;
@@ -109,6 +110,7 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
     let data = Arc::new(RwLock::new(vec![0u8; (width * height * 3) as usize]));
 
     // render tile setup
+    let start_setup = Instant::now();
     let tiles = Arc::new(Mutex::new(Vec::new()));
     for x in (0..width).step_by(TILE_SIZE as usize) {
         for y in (0..height).step_by(TILE_SIZE as usize) {
@@ -143,8 +145,10 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
     let camera = Arc::new(Camera::new(look_from, look_at, Vec3::new(0.0, 1.0, 0.0), 40.0,
         width as Float / height as Float,
         0.0, (look_from - look_at).length()));
+    let elapsed_setup = start_setup.elapsed();
 
     // start render threads
+    let start_render = Instant::now();
     let mut thread_handles = Vec::new();
     let (tx, rx) = mpsc::channel();
     for _ in 0..8 {
@@ -168,6 +172,10 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
         progress_bar.set_job_title(&format!("Rendering ({}/{} tiles complete)", rendered_tiles + 1, tile_count));
         progress_bar.reach_percent((((rendered_tiles + 1) as f32 / tile_count as f32) * 100.0) as i32);
     }
+    let elapsed_render = start_render.elapsed();
+
+    println!("setup: \t{}.{:03} s", elapsed_setup.as_secs(), elapsed_setup.subsec_nanos() / 1000000);
+    println!("render:\t{}.{:03} s", elapsed_render.as_secs(), elapsed_render.subsec_nanos() / 1000000);
 
     for handle in thread_handles {
         handle.join().unwrap();
