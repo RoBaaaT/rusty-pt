@@ -18,10 +18,12 @@ mod math;
 mod hitable;
 mod camera;
 mod material;
+mod texture;
 use crate::math::*;
 use crate::hitable::*;
 use crate::material::*;
 use crate::camera::*;
+use crate::texture::*;
 
 const TILE_SIZE: u32 = 64;
 
@@ -50,12 +52,12 @@ fn main() {
     }
 }
 
-fn color(ray: &Ray, world: &Hitable, depth: u16) -> Vec3 {
+fn color(ray: &Ray, world: &Hitable, textures: &[Box<dyn Texture>], depth: u16) -> Vec3 {
     if let Some(rec) = world.hit(ray, 0.001, MAX_FLOAT) {
         let mut scattered: Ray = Ray::new(Vec3::zero(), Vec3::zero());
         let mut attenuation: Vec3 = Vec3::zero();
-        if depth < 50 && rec.material.scatter(&ray, &rec, &mut attenuation, &mut scattered) {
-            return attenuation * color(&scattered, world, depth + 1);
+        if depth < 50 && rec.material.scatter(&ray, &rec, &mut attenuation, &mut scattered, textures) {
+            return attenuation * color(&scattered, world, textures, depth + 1);
         } else {
             return Vec3::zero();
         }
@@ -67,7 +69,7 @@ fn color(ray: &Ray, world: &Hitable, depth: u16) -> Vec3 {
 }
 
 fn render_thread(channel: Sender<bool>, width: u32, height: u32, tiles: Arc<Mutex<Vec<RenderTile>>>, samples: usize,
-        world: Arc<Hitable>, camera: Arc<Camera>, out: Arc<RwLock<Vec<u8>>>) {
+        world: Arc<Hitable>, camera: Arc<Camera>, textures: Arc<Vec<Box<dyn Texture>>>, out: Arc<RwLock<Vec<u8>>>) {
     loop {
         let t = tiles.lock().unwrap().pop();
         if let Some(tile) = t {
@@ -82,7 +84,7 @@ fn render_thread(channel: Sender<bool>, width: u32, height: u32, tiles: Arc<Mute
                         let u = (global_x as Float + ur) / width as Float;
                         let v = ((height - global_y) as Float - vr) / height as Float;
                         let r = camera.get_ray(u, v);
-                        col += color(&r, &*world, 0);
+                        col += color(&r, &*world, &*textures, 0);
                     }
                     col /= samples as Float;
                     col = Vec3::new(col.r().sqrt(), col.g().sqrt(), col.b().sqrt());
@@ -123,15 +125,21 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
 
     // scene setup
     let samples = 100;
+    let gold_texture = Box::new(ConstantTexture::new(Vec3::new(0.8, 0.6, 0.2)));
+    let ground_texture = Box::new(ConstantTexture::new(Vec3::new(0.2, 0.3, 1.0)));
+    let wall_texture = Box::new(ConstantTexture::new(Vec3::new(0.6, 0.2, 0.2)));
+    let sphere_texture = Box::new(ConstantTexture::new(Vec3::new(0.7, 0.3, 0.2)));
+    let white_texture = Box::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
+    let textures: Arc<Vec<Box<dyn Texture>>> = Arc::new(vec!(gold_texture, ground_texture, wall_texture, sphere_texture, white_texture));
     let mat1 = Materials::Dielectric(Dielectric::new(1.5));
-    let mat2 = Materials::Lambertian(Lambertian::new(Vec3::new(0.2, 0.3, 1.0)));
-    let mat3 = Materials::Lambertian(Lambertian::new(Vec3::new(0.7, 0.3, 0.2)));
-    let mat4 = Materials::Metal(Metal::new(Vec3::new(0.8, 0.6, 0.2), 0.8));
-    let mat5 = Materials::Lambertian(Lambertian::new(Vec3::new(0.6, 0.2, 0.2)));
-    let mirror = Materials::Metal(Metal::new(Vec3::new(1.0, 1.0, 1.0), 0.0));
+    let mat2 = Materials::Lambertian(Lambertian::new(1));
+    let mat3 = Materials::Lambertian(Lambertian::new(3));
+    let gold = Materials::Metal(Metal::new(0, 0.8));
+    let mat5 = Materials::Lambertian(Lambertian::new(2));
+    let mirror = Materials::Metal(Metal::new(4, 0.0));
     let sphere1 = Hitables::Sphere(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, mat3));
     let sphere2 = Hitables::Sphere(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.5, mat1));
-    let sphere3 = Hitables::Sphere(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, mat4));
+    let sphere3 = Hitables::Sphere(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, gold));
     let ground = Hitables::Plane(Plane::new(Vec3::new(0.0, 1.0, 0.0), -0.5, mat2));
     let wall = Hitables::Plane(Plane::new(Vec3::new(0.0, 0.0, 1.0), -2.0, mat5));
     let sphere5 = Hitables::Sphere(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), -0.45, mat1));
@@ -155,11 +163,13 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
         let thread_tiles = Arc::clone(&tiles);
         let thread_world = Arc::clone(&world);
         let thread_camera = Arc::clone(&camera);
+        let thread_textures = Arc::clone(&textures);
         let thread_data = Arc::clone(&data);
         let thread_tx = tx.clone();
 
         let handle = thread::spawn(move || {
-            render_thread(thread_tx, width, height, thread_tiles, samples, thread_world, thread_camera, thread_data);
+            render_thread(thread_tx, width, height, thread_tiles, samples, thread_world, thread_camera, thread_textures,
+                thread_data);
         });
         thread_handles.push(handle);
     }

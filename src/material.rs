@@ -1,8 +1,10 @@
-use super::math::*;
-use super::hitable::*;
+use crate::math::*;
+use crate::hitable::*;
+use crate::texture::*;
 
 pub trait Material {
-    fn scatter(&self, ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray) -> bool;
+    fn scatter(&self, ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray,
+        textures: &[Box<dyn Texture>]) -> bool;
 }
 
 #[derive(Copy, Clone)]
@@ -14,12 +16,12 @@ pub enum Materials {
 
 #[derive(Copy, Clone)]
 pub struct Lambertian {
-    pub albedo: Vec3
+    pub albedo: TextureId
 }
 
 #[derive(Copy, Clone)]
 pub struct Metal {
-    pub albedo: Vec3,
+    pub albedo: TextureId,
     pub roughness: Float
 }
 
@@ -30,13 +32,13 @@ pub struct Dielectric {
 
 
 impl Lambertian {
-    pub fn new(albedo: Vec3) -> Lambertian {
+    pub fn new(albedo: TextureId) -> Lambertian {
         Lambertian { albedo: albedo }
     }
 }
 
 impl Metal {
-    pub fn new(albedo: Vec3, roughness: Float) -> Metal {
+    pub fn new(albedo: TextureId, roughness: Float) -> Metal {
         Metal { albedo: albedo, roughness: roughness }
     }
 }
@@ -48,29 +50,32 @@ impl Dielectric {
 }
 
 impl Material for Materials {
-    fn scatter(&self, ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray) -> bool {
+    fn scatter(&self, ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray,
+            textures: &[Box<dyn Texture>]) -> bool {
         match self {
-            Materials::Lambertian(lambertian) => lambertian.scatter(ray_in, rec, attenuation, scattered),
-            Materials::Metal(metal) => metal.scatter(ray_in, rec, attenuation, scattered),
-            Materials::Dielectric(dielectric) => dielectric.scatter(ray_in, rec, attenuation, scattered)
+            Materials::Lambertian(lambertian) => lambertian.scatter(ray_in, rec, attenuation, scattered, textures),
+            Materials::Metal(metal) => metal.scatter(ray_in, rec, attenuation, scattered, textures),
+            Materials::Dielectric(dielectric) => dielectric.scatter(ray_in, rec, attenuation, scattered, textures)
         }
     }
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, _ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray) -> bool {
+    fn scatter(&self, _ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray,
+            textures: &[Box<dyn Texture>]) -> bool {
         let target = rec.p + rec.normal + random_in_unit_sphere();
         *scattered = Ray::new(rec.p, target - rec.p);
-        *attenuation = self.albedo;
+        *attenuation = textures[self.albedo].value(0.0, 0.0, &rec.p);
         true
     }
 }
 
 impl Material for Metal {
-    fn scatter(&self, ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray) -> bool {
+    fn scatter(&self, ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray,
+            textures: &[Box<dyn Texture>]) -> bool {
         let reflected = Vec3::reflect(Vec3::normalize(ray_in.direction()), rec.normal);
         *scattered = Ray::new(rec.p, reflected + self.roughness * random_in_unit_sphere());
-        *attenuation = self.albedo;
+        *attenuation = textures[self.albedo].value(0.0, 0.0, &rec.p);
         Vec3::dot(scattered.direction(), rec.normal) > 0.0
     }
 }
@@ -82,7 +87,8 @@ fn schlick(cosine: Float, refractive_index: Float) -> Float {
 }
 
 impl Material for Dielectric {
-    fn scatter(&self, ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray) -> bool {
+    fn scatter(&self, ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray,
+            textures: &[Box<dyn Texture>]) -> bool {
         let reflected = Vec3::reflect(ray_in.direction(), rec.normal);
         *attenuation = Vec3::one();
 
