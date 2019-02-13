@@ -126,11 +126,14 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
     // scene setup
     let samples = 100;
     let gold_texture = Box::new(ConstantTexture::new(Vec3::new(0.8, 0.6, 0.2)));
-    let ground_texture = Box::new(ConstantTexture::new(Vec3::new(0.2, 0.3, 1.0)));
+    let ground_texture = Box::new(CheckerTexture::new(5, 6, 4.0 * PI));
     let wall_texture = Box::new(ConstantTexture::new(Vec3::new(0.6, 0.2, 0.2)));
     let sphere_texture = Box::new(ConstantTexture::new(Vec3::new(0.7, 0.3, 0.2)));
     let white_texture = Box::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
-    let textures: Arc<Vec<Box<dyn Texture>>> = Arc::new(vec!(gold_texture, ground_texture, wall_texture, sphere_texture, white_texture));
+    let ground_even_texture = Box::new(ConstantTexture::new(Vec3::new(0.2, 0.3, 1.0)));
+    let ground_odd_texture = Box::new(ConstantTexture::new(Vec3::new(1.0, 0.3, 0.2)));
+    let textures: Arc<Vec<Box<dyn Texture>>> = Arc::new(vec!(gold_texture, ground_texture, wall_texture, sphere_texture,
+        white_texture, ground_even_texture, ground_odd_texture));
     let mat1 = Materials::Dielectric(Dielectric::new(1.5));
     let mat2 = Materials::Lambertian(Lambertian::new(1));
     let mat3 = Materials::Lambertian(Lambertian::new(3));
@@ -138,9 +141,9 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
     let mat5 = Materials::Lambertian(Lambertian::new(2));
     let mirror = Materials::Metal(Metal::new(4, 0.0));
     let sphere1 = Hitables::Sphere(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, mat3));
-    let sphere2 = Hitables::Sphere(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.5, mat1));
+    let sphere2 = Hitables::Sphere(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.49, mat1));
     let sphere3 = Hitables::Sphere(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, gold));
-    let ground = Hitables::Plane(Plane::new(Vec3::new(0.0, 1.0, 0.0), -0.5, mat2));
+    let ground = Hitables::Plane(Plane::new(Vec3::new(0.0, 1.0, 0.0), -0.501, mat2));
     let wall = Hitables::Plane(Plane::new(Vec3::new(0.0, 0.0, 1.0), -2.0, mat5));
     let sphere5 = Hitables::Sphere(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), -0.45, mat1));
     let tri1 = Hitables::Triangle(Triangle::new(Vec3::new(2.0, 0.0, -2.0),

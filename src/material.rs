@@ -65,7 +65,7 @@ impl Material for Lambertian {
             textures: &[Box<dyn Texture>]) -> bool {
         let target = rec.p + rec.normal + random_in_unit_sphere();
         *scattered = Ray::new(rec.p, target - rec.p);
-        *attenuation = textures[self.albedo].value(0.0, 0.0, &rec.p);
+        *attenuation = textures[self.albedo].value(0.0, 0.0, &rec.p, textures);
         true
     }
 }
@@ -75,7 +75,7 @@ impl Material for Metal {
             textures: &[Box<dyn Texture>]) -> bool {
         let reflected = Vec3::reflect(Vec3::normalize(ray_in.direction()), rec.normal);
         *scattered = Ray::new(rec.p, reflected + self.roughness * random_in_unit_sphere());
-        *attenuation = textures[self.albedo].value(0.0, 0.0, &rec.p);
+        *attenuation = textures[self.albedo].value(0.0, 0.0, &rec.p, textures);
         Vec3::dot(scattered.direction(), rec.normal) > 0.0
     }
 }
@@ -88,7 +88,7 @@ fn schlick(cosine: Float, refractive_index: Float) -> Float {
 
 impl Material for Dielectric {
     fn scatter(&self, ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray,
-            textures: &[Box<dyn Texture>]) -> bool {
+            _textures: &[Box<dyn Texture>]) -> bool {
         let reflected = Vec3::reflect(ray_in.direction(), rec.normal);
         *attenuation = Vec3::one();
 
