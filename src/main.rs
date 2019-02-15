@@ -128,7 +128,7 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
     let gold_texture = Box::new(ConstantTexture::new(Vec3::new(0.8, 0.6, 0.2)));
     let ground_texture = Box::new(CheckerTexture::new(5, 6, 4.0 * PI));
     let wall_texture = Box::new(ConstantTexture::new(Vec3::new(0.6, 0.2, 0.2)));
-    let sphere_texture = Box::new(ConstantTexture::new(Vec3::new(0.7, 0.3, 0.2)));
+    let sphere_texture = Box::new(NoiseTexture::new(20.0));
     let white_texture = Box::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
     let ground_even_texture = Box::new(ConstantTexture::new(Vec3::new(0.2, 0.3, 1.0)));
     let ground_odd_texture = Box::new(ConstantTexture::new(Vec3::new(1.0, 0.3, 0.2)));

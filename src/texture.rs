@@ -1,4 +1,9 @@
+use std::sync::{Arc, RwLock};
+
 use crate::math::*;
+
+mod perlin;
+use crate::texture::perlin::PerlinNoise;
 
 pub type TextureId = usize;
 
@@ -16,6 +21,11 @@ pub struct CheckerTexture {
     frequency: Float
 }
 
+pub struct NoiseTexture {
+    frequency: Float,
+    noise: Arc<RwLock<PerlinNoise>>
+}
+
 impl ConstantTexture {
     pub fn new(color: Vec3) -> ConstantTexture {
         ConstantTexture { color: color }
@@ -25,6 +35,12 @@ impl ConstantTexture {
 impl CheckerTexture {
     pub fn new(even: TextureId, odd: TextureId, frequency: Float) -> CheckerTexture {
         CheckerTexture { even: even, odd: odd, frequency: frequency }
+    }
+}
+
+impl NoiseTexture {
+    pub fn new(frequency: Float) -> NoiseTexture {
+        NoiseTexture { frequency: frequency, noise: Arc::new(RwLock::new(PerlinNoise::new())) }
     }
 }
 
@@ -45,5 +61,12 @@ impl Texture for CheckerTexture {
         } else {
             textures[self.even].value(u, v, p, textures)
         }
+    }
+}
+
+impl Texture for NoiseTexture {
+    fn value(&self, _u: Float, _v: Float, p: &Vec3, _textures: &[Box<dyn Texture>]) -> Vec3 {
+        let scaled = self.frequency * p;
+        self.noise.read().unwrap().noise(&scaled) * Vec3::one()
     }
 }
