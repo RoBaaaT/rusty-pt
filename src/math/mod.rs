@@ -136,7 +136,6 @@ impl ops::Mul<Vec3> for Float {
     }
 }
 
-
 impl ops::Mul<&Vec3> for Float {
     type Output = Vec3;
 
@@ -192,6 +191,13 @@ impl ops::DivAssign<Float> for Vec3 {
         *self = Vec3::new(self.e[0] / other, self.e[1] / other, self.e[2] / other);
     }
 }
+
+impl ops::MulAssign<Float> for Vec3 {
+    fn mul_assign(&mut self, other: Float) {
+        *self = Vec3::new(self.e[0] * other, self.e[1] * other, self.e[2] * other);
+    }
+}
+
 
 impl ops::Neg for Vec3 {
     type Output = Vec3;

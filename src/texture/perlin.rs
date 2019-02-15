@@ -87,4 +87,16 @@ impl PerlinNoise {
         }
         perlin_interpolation(&c, u, v, w)
     }
+
+    pub fn turbulence(&self, p: &Vec3, depth: usize) -> Float {
+        let mut accu = 0.0;
+        let mut temp_p: Vec3 = *p;
+        let mut weight = 1.0;
+        for _ in 0..depth {
+            accu += weight * (self.noise(&temp_p) * 2.0 - 1.0);
+            weight *= 0.5;
+            temp_p *= 2.0;
+        }
+        accu.abs()
+    }
 }

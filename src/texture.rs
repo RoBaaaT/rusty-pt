@@ -26,6 +26,11 @@ pub struct NoiseTexture {
     noise: Arc<RwLock<PerlinNoise>>
 }
 
+pub struct MarbleTexture {
+    frequency: Float,
+    noise: Arc<RwLock<PerlinNoise>>
+}
+
 impl ConstantTexture {
     pub fn new(color: Vec3) -> ConstantTexture {
         ConstantTexture { color: color }
@@ -41,6 +46,12 @@ impl CheckerTexture {
 impl NoiseTexture {
     pub fn new(frequency: Float) -> NoiseTexture {
         NoiseTexture { frequency: frequency, noise: Arc::new(RwLock::new(PerlinNoise::new())) }
+    }
+}
+
+impl MarbleTexture {
+    pub fn new(frequency: Float) -> MarbleTexture {
+        MarbleTexture { frequency: frequency, noise: Arc::new(RwLock::new(PerlinNoise::new())) }
     }
 }
 
@@ -68,5 +79,13 @@ impl Texture for NoiseTexture {
     fn value(&self, _u: Float, _v: Float, p: &Vec3, _textures: &[Box<dyn Texture>]) -> Vec3 {
         let scaled = self.frequency * p;
         self.noise.read().unwrap().noise(&scaled) * Vec3::one()
+    }
+}
+
+impl Texture for MarbleTexture {
+    fn value(&self, _u: Float, _v: Float, p: &Vec3, _textures: &[Box<dyn Texture>]) -> Vec3 {
+        let scaled = self.frequency * p;
+        let turb = self.noise.read().unwrap().turbulence(&scaled, 7);
+        0.5 * (1.0 + (self.frequency * p.x() + 10.0 * turb).sin()) * Vec3::one()
     }
 }
