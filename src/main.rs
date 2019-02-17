@@ -150,7 +150,9 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
         Vec3::new(2.0, 1.5, -1.5), Vec3::new(-2.0, 0.0, -2.0), mirror));
     let tri2 = Arc::new(Triangle::new(Vec3::new(2.0, 1.5, -1.5),
         Vec3::new(-2.0, 1.5, -1.5), Vec3::new(-2.0, 0.0, -2.0), mirror));
-    let world: Arc<Vec<Arc<dyn Hitable>>> = Arc::new(vec!(sphere1, sphere2, sphere3, ground, sphere5, wall, tri1, tri2));
+    let bvh_elements: Vec<Arc<dyn Hitable>> = vec!(sphere1, sphere2, sphere3, sphere5, tri1, tri2);
+    let bvh = Arc::new(BVHNode::new(&bvh_elements, 0.0, 0.0));
+    let world: Arc<Vec<Arc<dyn Hitable>>> = Arc::new(vec!(ground, wall, bvh));
     let look_from = Vec3::new(-3.0, 1.0, 3.0);
     let look_at = Vec3::new(0.0, 0.0, -1.0);
     let camera = Arc::new(Camera::new(look_from, look_at, Vec3::new(0.0, 1.0, 0.0), 40.0,
