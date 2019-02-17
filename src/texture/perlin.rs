@@ -79,9 +79,9 @@ impl PerlinNoise {
             for dj in 0..2 {
                 for dk in 0..2 {
                     c[di * 4 + dj * 2 + dk] = self.random[
-                        (self.x_permutation[(i as usize + di) & 255] ^
-                        self.y_permutation[(j as usize + dj) & 255] ^
-                        self.z_permutation[(k as usize + dk) & 255]) as usize]
+                        (self.x_permutation[(i + di as i32) as usize & 255] ^
+                        self.y_permutation[(j + dj as i32) as usize & 255] ^
+                        self.z_permutation[(k + dk as i32) as usize & 255]) as usize]
                 }
             }
         }
