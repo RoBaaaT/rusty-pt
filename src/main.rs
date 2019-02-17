@@ -140,17 +140,17 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
     let gold = Materials::Metal(Metal::new(0, 0.8));
     let mat5 = Materials::Lambertian(Lambertian::new(2));
     let mirror = Materials::Metal(Metal::new(4, 0.0));
-    let sphere1 = Hitables::Sphere(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, mat3));
-    let sphere2 = Hitables::Sphere(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.49, mat1));
-    let sphere3 = Hitables::Sphere(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, gold));
-    let ground = Hitables::Plane(Plane::new(Vec3::new(0.0, 1.0, 0.0), -0.501, mat2));
-    let wall = Hitables::Plane(Plane::new(Vec3::new(0.0, 0.0, 1.0), -2.0, mat5));
-    let sphere5 = Hitables::Sphere(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), -0.45, mat1));
-    let tri1 = Hitables::Triangle(Triangle::new(Vec3::new(2.0, 0.0, -2.0),
+    let sphere1 = Arc::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, mat3));
+    let sphere2 = Arc::new(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.49, mat1));
+    let sphere3 = Arc::new(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, gold));
+    let ground = Arc::new(Plane::new(Vec3::new(0.0, 1.0, 0.0), -0.501, mat2));
+    let wall = Arc::new(Plane::new(Vec3::new(0.0, 0.0, 1.0), -2.0, mat5));
+    let sphere5 = Arc::new(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), -0.45, mat1));
+    let tri1 = Arc::new(Triangle::new(Vec3::new(2.0, 0.0, -2.0),
         Vec3::new(2.0, 1.5, -1.5), Vec3::new(-2.0, 0.0, -2.0), mirror));
-    let tri2 = Hitables::Triangle(Triangle::new(Vec3::new(2.0, 1.5, -1.5),
+    let tri2 = Arc::new(Triangle::new(Vec3::new(2.0, 1.5, -1.5),
         Vec3::new(-2.0, 1.5, -1.5), Vec3::new(-2.0, 0.0, -2.0), mirror));
-    let world = Arc::new(Hitables::List(vec!(sphere1, sphere2, sphere3, ground, sphere5, wall, tri1, tri2)));
+    let world: Arc<Vec<Arc<dyn Hitable>>> = Arc::new(vec!(sphere1, sphere2, sphere3, ground, sphere5, wall, tri1, tri2));
     let look_from = Vec3::new(-3.0, 1.0, 3.0);
     let look_at = Vec3::new(0.0, 0.0, -1.0);
     let camera = Arc::new(Camera::new(look_from, look_at, Vec3::new(0.0, 1.0, 0.0), 40.0,

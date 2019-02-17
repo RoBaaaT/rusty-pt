@@ -1,15 +1,9 @@
+use std::sync::Arc;
 use super::math::*;
 use super::material::*;
 
-pub trait Hitable {
+pub trait Hitable: Send + Sync {
     fn hit(&self, ray: &Ray, t_min: Float, t_max: Float) -> Option<HitRecord>;
-}
-
-pub enum Hitables {
-    Sphere(Sphere),
-    Plane(Plane),
-    Triangle(Triangle),
-    List(Vec<Hitables>)
 }
 
 pub struct HitRecord {
@@ -56,18 +50,7 @@ impl Triangle {
     }
 }
 
-impl Hitable for Hitables {
-    fn hit(&self, ray: &Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
-        match self {
-            Hitables::Sphere(sphere) => sphere.hit(ray, t_min, t_max),
-            Hitables::Plane(plane) => plane.hit(ray, t_min, t_max),
-            Hitables::Triangle(triangle) => triangle.hit(ray, t_min, t_max),
-            Hitables::List(vector) => vector.hit(ray, t_min, t_max)
-        }
-    }
-}
-
-impl Hitable for Vec<Hitables> {
+impl Hitable for Vec<Arc<dyn Hitable>> {
     fn hit(&self, ray: &Ray, t_min: Float, t_max: Float) -> Option<HitRecord> {
         let mut result: Option<HitRecord> = None;
         let mut closest: Float = t_max;
