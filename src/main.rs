@@ -72,6 +72,7 @@ fn render_thread(channel: Sender<bool>, width: u32, height: u32, tiles: Arc<Mute
         world: Arc<Hitable>, camera: Arc<Camera>, textures: Arc<Vec<Box<dyn Texture>>>, out: Arc<RwLock<Vec<u8>>>) {
     loop {
         let t = tiles.lock().unwrap().pop();
+        let mut local_data = vec![0u8; (TILE_SIZE * TILE_SIZE * 3) as usize];
         if let Some(tile) = t {
             for x in 0..tile.width {
                 for y in 0..tile.height {
@@ -91,11 +92,23 @@ fn render_thread(channel: Sender<bool>, width: u32, height: u32, tiles: Arc<Mute
                     let ir = (col.r() * 255.9) as u8;
                     let ig = (col.g() * 255.9) as u8;
                     let ib = (col.b() * 255.9) as u8;
-                    let mut data = out.write().unwrap();
-                    data[((global_y * width + global_x) * 3 + 0) as usize] = ir;
-                    data[((global_y * width + global_x) * 3 + 1) as usize] = ig;
-                    data[((global_y * width + global_x) * 3 + 2) as usize] = ib;
+                    local_data[((y * TILE_SIZE + x) * 3 + 0) as usize] = ir;
+                    local_data[((y * TILE_SIZE + x) * 3 + 1) as usize] = ig;
+                    local_data[((y * TILE_SIZE + x) * 3 + 2) as usize] = ib;
                 }
+            }
+            let mut data = out.write().unwrap();
+            for y in 0..tile.height {
+                let row_offset = (y + tile.top) * width;
+                let begin = row_offset + tile.left;
+                let end = begin + tile.width;
+                let row_range = (begin * 3) as usize..(end * 3) as usize;
+                let local_begin = y * TILE_SIZE;
+                let local_end = local_begin + tile.width;
+                let local_slice = &local_data[(local_begin * 3) as usize..(local_end * 3) as usize];
+                let iter = local_slice.iter();
+                // TODO: find out if this allocates the _ Vec or is optimized away
+                let _: Vec<u8> = data.splice(row_range, iter.cloned()).collect();
             }
             channel.send(true).unwrap();
         } else {
