@@ -40,16 +40,8 @@ fn main() {
     let height = 1080 / 2;
 
     let path = Path::new("out/out.png");
-    let path_display = path.display();
-    let file = match File::create(path) {
-        Err(why) => panic!("couldn't create {}: {}", path_display, why.description()),
-        Ok(file) => file
-    };
 
-    match write_output(file, width, height) {
-        Err(why) => panic!("couldn't write to {}: {}", path_display, why.description()),
-        Ok(_) => println!("wrote output to {}", path_display)
-    }
+    render(path, width, height);
 }
 
 fn color(ray: &Ray, world: &Hitable, textures: &[Box<dyn Texture>], depth: u16) -> Vec3 {
@@ -117,11 +109,9 @@ fn render_thread(channel: Sender<bool>, width: u32, height: u32, tiles: Arc<Mute
     }
 }
 
-fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result<()> {
+fn render(path: &Path, width: u32, height: u32) {
+    let path_display = path.display();
     // output image setup
-    let mut encoder = png::Encoder::new(file, width, height);
-    encoder.set(png::ColorType::RGB).set(png::BitDepth::Eight);
-    let mut writer = encoder.write_header()?;
     let data = Arc::new(RwLock::new(vec![0u8; (width * height * 3) as usize]));
 
     // render tile setup
@@ -195,10 +185,30 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
     let mut progress_bar = progress::Bar::new();
     progress_bar.set_job_title("Rendering");
 
-    for rendered_tiles in 0..tile_count {
+    let mut rendered_tiles = 0;
+    while rendered_tiles < tile_count {
         rx.recv().unwrap();
+        rendered_tiles += 1;
+        while !rx.try_recv().is_err() {
+            rendered_tiles += 1;
+        }
         progress_bar.set_job_title(&format!("Rendering ({}/{} tiles complete)", rendered_tiles + 1, tile_count));
         progress_bar.reach_percent((((rendered_tiles + 1) as f32 / tile_count as f32) * 100.0) as i32);
+
+        let file = match File::create(path) {
+            Err(why) => panic!("couldn't create {}: {}", path_display, why.description()),
+            Ok(file) => file
+        };
+        let mut encoder = png::Encoder::new(file, width, height);
+        encoder.set(png::ColorType::RGB).set(png::BitDepth::Eight);
+        let mut writer = match encoder.write_header() {
+            Err(why) => panic!("couldn't write png header to {}: {}", path_display, why.description()),
+            Ok(writer) => writer
+        };
+        match writer.write_image_data(&data.read().unwrap()) {
+            Err(why) => panic!("couldn't write image data to {}: {}", path_display, why.description()),
+            Ok(_) => ()
+        };
     }
     let elapsed_render = start_render.elapsed();
 
@@ -208,7 +218,4 @@ fn write_output(file: std::fs::File, width: u32, height: u32) -> std::io::Result
     for handle in thread_handles {
         handle.join().unwrap();
     }
-
-    writer.write_image_data(&data.read().unwrap())?;
-    Ok(())
 }
