@@ -10,7 +10,7 @@ pub struct PerlinNoise {
 
 fn permute(input: &mut [u8; 256]) {
     for i in (1..256).rev() {
-        let target = thread_rng().gen_range(0, i);
+        let target = thread_rng().gen_range(0..i);
         let tmp = input[target];
         input[target] = input[i];
         input[i] = tmp;

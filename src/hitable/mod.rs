@@ -69,7 +69,7 @@ impl Triangle {
 
 impl BVHNode {
     pub fn new(elements: &[Arc<dyn Hitable>], t0: Float, t1: Float) -> BVHNode {
-        let dim = rand::thread_rng().gen_range(0, 3);
+        let dim = rand::thread_rng().gen_range(0..3);
         let mut els: Vec<Arc<dyn Hitable>> = Vec::from(elements);
         els.sort_unstable_by(|a, b| {
             let a_bbox = a.bounding_box(t0, t1);

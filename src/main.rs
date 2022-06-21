@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::path::Path;
 use std::fs::File;
 use std::sync::{Arc, Mutex, RwLock};
@@ -12,7 +11,6 @@ extern crate progress;
 use rand::prelude::*;
 
 extern crate png;
-use png::HasParameters;
 
 mod math;
 mod hitable;
@@ -44,7 +42,7 @@ fn main() {
     render(path, width, height);
 }
 
-fn color(ray: &Ray, world: &Hitable, textures: &[Box<dyn Texture>], depth: u16) -> Vec3 {
+fn color(ray: &Ray, world: &dyn Hitable, textures: &[Box<dyn Texture>], depth: u16) -> Vec3 {
     if let Some(rec) = world.hit(ray, 0.001, MAX_FLOAT) {
         let mut scattered: Ray = Ray::new(Vec3::zero(), Vec3::zero());
         let mut attenuation: Vec3 = Vec3::zero();
@@ -61,7 +59,7 @@ fn color(ray: &Ray, world: &Hitable, textures: &[Box<dyn Texture>], depth: u16) 
 }
 
 fn render_thread(channel: Sender<bool>, width: u32, height: u32, tiles: Arc<Mutex<Vec<RenderTile>>>, samples: usize,
-        world: Arc<Hitable>, camera: Arc<Camera>, textures: Arc<Vec<Box<dyn Texture>>>, out: Arc<RwLock<Vec<u8>>>) {
+        world: Arc<dyn Hitable>, camera: Arc<Camera>, textures: Arc<Vec<Box<dyn Texture>>>, out: Arc<RwLock<Vec<u8>>>) {
     loop {
         let t = tiles.lock().unwrap().pop();
         let mut local_data = vec![0u8; (TILE_SIZE * TILE_SIZE * 3) as usize];
@@ -196,17 +194,18 @@ fn render(path: &Path, width: u32, height: u32) {
         progress_bar.reach_percent((((rendered_tiles + 1) as f32 / tile_count as f32) * 100.0) as i32);
 
         let file = match File::create(path) {
-            Err(why) => panic!("couldn't create {}: {}", path_display, why.description()),
+            Err(why) => panic!("couldn't create {}: {}", path_display, why),
             Ok(file) => file
         };
         let mut encoder = png::Encoder::new(file, width, height);
-        encoder.set(png::ColorType::RGB).set(png::BitDepth::Eight);
+        encoder.set_color(png::ColorType::Rgb);
+        encoder.set_depth(png::BitDepth::Eight);
         let mut writer = match encoder.write_header() {
-            Err(why) => panic!("couldn't write png header to {}: {}", path_display, why.description()),
+            Err(why) => panic!("couldn't write png header to {}: {}", path_display, why),
             Ok(writer) => writer
         };
         match writer.write_image_data(&data.read().unwrap()) {
-            Err(why) => panic!("couldn't write image data to {}: {}", path_display, why.description()),
+            Err(why) => panic!("couldn't write image data to {}: {}", path_display, why),
             Ok(_) => ()
         };
     }
