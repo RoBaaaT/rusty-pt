@@ -34,8 +34,8 @@ struct RenderTile {
 }
 
 fn main() {
-    let width = 1920 / 2;
-    let height = 1080 / 2;
+    let width = 1920 / 8;
+    let height = 1080 / 8;
 
     let path = Path::new("out/out.png");
 
@@ -125,43 +125,70 @@ fn render(path: &Path, width: u32, height: u32) {
     let tile_count = tiles.lock().unwrap().len();
 
     // scene setup
-    let samples = 100;
-    let gold_texture = Box::new(ConstantTexture::new(Vec3::new(0.8, 0.6, 0.2)));
-    let ground_texture = Box::new(CheckerTexture::new(5, 6, 4.0 * PI));
-    let wall_texture = Box::new(ConstantTexture::new(Vec3::new(0.6, 0.2, 0.2)));
-    let sphere_texture = Box::new(MarbleTexture::new(7.0));
-    let white_texture = Box::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
-    let ground_even_texture = Box::new(ConstantTexture::new(Vec3::new(0.2, 0.3, 1.0)));
-    let ground_odd_texture = Box::new(ConstantTexture::new(Vec3::new(1.0, 0.3, 0.2)));
-    let textures: Arc<Vec<Box<dyn Texture>>> = Arc::new(vec!(gold_texture, ground_texture, wall_texture, sphere_texture,
-        white_texture, ground_even_texture, ground_odd_texture));
-    let mat1 = Materials::Dielectric(Dielectric::new(1.5));
-    let mat2 = Materials::Lambertian(Lambertian::new(1));
-    let mat3 = Materials::Lambertian(Lambertian::new(3));
-    let gold = Materials::Metal(Metal::new(0, 0.8));
-    let mat5 = Materials::Lambertian(Lambertian::new(2));
-    let mirror = Materials::Metal(Metal::new(4, 0.0));
-    let sphere1 = Arc::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, mat3));
-    let sphere2 = Arc::new(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.49, mat1));
-    let sphere3 = Arc::new(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, gold));
-    let ground = Arc::new(Plane::new(Vec3::new(0.0, 1.0, 0.0), -0.501, mat2));
-    let wall = Arc::new(Plane::new(Vec3::new(0.0, 0.0, 1.0), -2.0, mat5));
-    let sphere5 = Arc::new(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), -0.45, mat1));
-    let tri1 = Arc::new(Triangle::new(Vec3::new(2.0, 0.0, -2.0),
-        Vec3::new(2.0, 1.5, -1.5), Vec3::new(-2.0, 0.0, -2.0), mirror));
-    let tri2 = Arc::new(Triangle::new(Vec3::new(2.0, 1.5, -1.5),
-        Vec3::new(-2.0, 1.5, -1.5), Vec3::new(-2.0, 0.0, -2.0), mirror));
-    let bvh_elements: Vec<Arc<dyn Hitable>> = vec!(sphere1, sphere2, sphere3, sphere5, tri1, tri2);
-    let bvh = Arc::new(BVHNode::new(&bvh_elements, 0.0, 0.0));
-    let world: Arc<Vec<Arc<dyn Hitable>>> = Arc::new(vec!(ground, wall, bvh));
-    let look_from = Vec3::new(-3.0, 1.0, 3.0);
-    let look_at = Vec3::new(0.0, 0.0, -1.0);
+    let cornell_box = true;
+    let mut textures: Arc<Vec<Box<dyn Texture>>> = Arc::new(vec!());
+    let mut world: Arc<Vec<Arc<dyn Hitable>>> = Arc::new(vec!());
+    let mut look_from = Vec3::new(0.0, 0.0, 5.0);
+    let mut look_at = Vec3::new(0.0, 0.0, 0.0);
+    if cornell_box {
+        // textures
+        let wall_texture = Box::new(ConstantTexture::new(Vec3::new(0.6, 0.2, 0.2)));
+        let wall_texture2 = Box::new(ConstantTexture::new(Vec3::new(0.0, 0.2, 0.6)));
+        Arc::get_mut(&mut textures).unwrap().extend([wall_texture as Box<dyn Texture>, wall_texture2]);
+        // materials
+        let wall_mat = Materials::Lambertian(Lambertian::new(0));
+        let wall_mat2 = Materials::Lambertian(Lambertian::new(1));
+        // geometry
+        let back1 = Arc::new(Triangle::new(Vec3::new(-2.0, -2.0, -2.0), Vec3::new(-2.0, 2.0, -2.0), Vec3::new(2.0, -2.0, -2.0), wall_mat));
+        let back3 = Arc::new(Triangle::new(Vec3::new(-2.0, -2.0, -2.0), Vec3::new(-2.0, 2.0, -2.0), Vec3::new(2.0, -2.0, -2.0), wall_mat2)); // TODO: just for testing - remove later
+        let back2 = Arc::new(Triangle::new(Vec3::new(-2.0, 2.0, -2.0), Vec3::new(2.0, 2.0, -2.0), Vec3::new(2.0, -2.0, -2.0), wall_mat));
+        // TODO: complete cornell box
+        let sphere1 = Arc::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, wall_mat2));
+        // note: there seems to be a bug in the BVH impl. somewhere - only the last triangle in bvh_elements shows up in the final rendering - further investigation showed that it happens for triangles that are flat along one of the planes of the coordinate system (here the x-y one)
+        // TODO: fix this
+        let bvh_elements: Vec<Arc<dyn Hitable>> = vec!(back1, back2, sphere1, back3);
+        let bvh = Arc::new(BVHNode::new(&bvh_elements, 0.0, 0.0));
+        Arc::get_mut(&mut world).unwrap().extend([bvh as Arc<dyn Hitable>]);
+    } else {
+        let gold_texture = Box::new(ConstantTexture::new(Vec3::new(0.8, 0.6, 0.2)));
+        let ground_texture = Box::new(CheckerTexture::new(5, 6, 4.0 * PI));
+        let wall_texture = Box::new(ConstantTexture::new(Vec3::new(0.6, 0.2, 0.2)));
+        let sphere_texture = Box::new(MarbleTexture::new(7.0));
+        let white_texture = Box::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
+        let ground_even_texture = Box::new(ConstantTexture::new(Vec3::new(0.2, 0.3, 1.0)));
+        let ground_odd_texture = Box::new(ConstantTexture::new(Vec3::new(1.0, 0.3, 0.2)));
+        Arc::get_mut(&mut textures).unwrap().extend([gold_texture as Box<dyn Texture>, ground_texture, wall_texture, sphere_texture,
+            white_texture, ground_even_texture, ground_odd_texture]);
+        let mat1 = Materials::Dielectric(Dielectric::new(1.5));
+        let mat2 = Materials::Lambertian(Lambertian::new(1));
+        let mat3 = Materials::Lambertian(Lambertian::new(3));
+        let gold = Materials::Metal(Metal::new(0, 0.8));
+        let mat5 = Materials::Lambertian(Lambertian::new(2));
+        let mirror = Materials::Metal(Metal::new(4, 0.0));
+        let sphere1 = Arc::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, mat3));
+        let sphere2 = Arc::new(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.49, mat1));
+        let sphere3 = Arc::new(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, gold));
+        let ground = Arc::new(Plane::new(Vec3::new(0.0, 1.0, 0.0), -0.501, mat2));
+        let wall = Arc::new(Plane::new(Vec3::new(0.0, 0.0, 1.0), -2.0, mat5));
+        let sphere5 = Arc::new(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), -0.45, mat1));
+        let tri1 = Arc::new(Triangle::new(Vec3::new(2.0, 0.0, -2.0),
+            Vec3::new(2.0, 1.5, -1.5), Vec3::new(-2.0, 0.0, -2.0), mirror));
+        let tri2 = Arc::new(Triangle::new(Vec3::new(2.0, 1.5, -1.5),
+            Vec3::new(-2.0, 1.5, -1.5), Vec3::new(-2.0, 0.0, -2.0), mirror));
+        let bvh_elements: Vec<Arc<dyn Hitable>> = vec!(sphere1, sphere2, sphere3, sphere5, tri1, tri2);
+        let bvh = Arc::new(BVHNode::new(&bvh_elements, 0.0, 0.0));
+        Arc::get_mut(&mut world).unwrap().extend([ground as Arc<dyn Hitable>, wall, bvh]);
+        // change camera perspective
+        look_from = Vec3::new(-3.0, 1.0, 3.0);
+        look_at = Vec3::new(0.0, 0.0, -1.0);
+    }
     let camera = Arc::new(Camera::new(look_from, look_at, Vec3::new(0.0, 1.0, 0.0), 40.0,
         width as Float / height as Float,
         0.0, (look_from - look_at).length()));
     let elapsed_setup = start_setup.elapsed();
 
     // start render threads
+    let samples = 20;
     let start_render = Instant::now();
     let mut thread_handles = Vec::new();
     let (tx, rx) = mpsc::channel();
