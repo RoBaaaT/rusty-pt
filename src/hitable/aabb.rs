@@ -1,3 +1,4 @@
+use std::fmt;
 use crate::math::*;
 
 #[derive(Copy, Clone)]
@@ -26,5 +27,11 @@ impl AABB {
             }
         }
         true
+    }
+}
+
+impl fmt::Display for AABB {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}->{}", self.min, self.max)
     }
 }

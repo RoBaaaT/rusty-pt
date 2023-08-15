@@ -128,25 +128,34 @@ fn render(path: &Path, width: u32, height: u32) {
     let cornell_box = true;
     let mut textures: Arc<Vec<Box<dyn Texture>>> = Arc::new(vec!());
     let mut world: Arc<Vec<Arc<dyn Hitable>>> = Arc::new(vec!());
-    let mut look_from = Vec3::new(0.0, 0.0, 5.0);
+    let mut look_from = Vec3::new(0.0, 0.0, 7.0);
     let mut look_at = Vec3::new(0.0, 0.0, 0.0);
     if cornell_box {
         // textures
-        let wall_texture = Box::new(ConstantTexture::new(Vec3::new(0.6, 0.2, 0.2)));
-        let wall_texture2 = Box::new(ConstantTexture::new(Vec3::new(0.0, 0.2, 0.6)));
-        Arc::get_mut(&mut textures).unwrap().extend([wall_texture as Box<dyn Texture>, wall_texture2]);
+        let wall_texture = Box::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
+        let l_wall_texture = Box::new(ConstantTexture::new(Vec3::new(1.0, 0.0, 0.0)));
+        let r_wall_texture = Box::new(ConstantTexture::new(Vec3::new(0.0, 1.0, 0.0)));
+        let noise_texture = Box::new(NoiseTexture::new(3.0));
+        Arc::get_mut(&mut textures).unwrap().extend([wall_texture as Box<dyn Texture>, l_wall_texture, r_wall_texture, noise_texture]);
         // materials
         let wall_mat = Materials::Lambertian(Lambertian::new(0));
-        let wall_mat2 = Materials::Lambertian(Lambertian::new(1));
+        let l_wall_mat = Materials::Lambertian(Lambertian::new(1));
+        let r_wall_mat = Materials::Lambertian(Lambertian::new(2));
+        let noise_mat = Materials::Lambertian(Lambertian::new(3));
         // geometry
-        let back1 = Arc::new(Triangle::new(Vec3::new(-2.0, -2.0, -2.0), Vec3::new(-2.0, 2.0, -2.0), Vec3::new(2.0, -2.0, -2.0), wall_mat));
-        let back3 = Arc::new(Triangle::new(Vec3::new(-2.0, -2.0, -2.0), Vec3::new(-2.0, 2.0, -2.0), Vec3::new(2.0, -2.0, -2.0), wall_mat2)); // TODO: just for testing - remove later
-        let back2 = Arc::new(Triangle::new(Vec3::new(-2.0, 2.0, -2.0), Vec3::new(2.0, 2.0, -2.0), Vec3::new(2.0, -2.0, -2.0), wall_mat));
+        let back1 = Arc::new(Triangle::new(Vec3::new(-2.0, -2.0, -2.0), Vec3::new(2.0, -2.0, -2.0), Vec3::new(-2.0, 2.0, -2.0), wall_mat));
+        let back2 = Arc::new(Triangle::new(Vec3::new(-2.0, 2.0, -2.0), Vec3::new(2.0, -2.0, -2.0), Vec3::new(2.0, 2.0, -2.0), wall_mat));
+        let left1 = Arc::new(Triangle::new(Vec3::new(-2.0, -2.0, -2.0), Vec3::new(-2.0, 2.0, -2.0), Vec3::new(-2.0, -2.0, 2.0), l_wall_mat));
+        let left2 = Arc::new(Triangle::new(Vec3::new(-2.0, 2.0, -2.0), Vec3::new(-2.0, 2.0, 2.0), Vec3::new(-2.0, -2.0, 2.0), l_wall_mat));
+        let right1 = Arc::new(Triangle::new(Vec3::new(2.0, -2.0, -2.0), Vec3::new(2.0, -2.0, 2.0), Vec3::new(2.0, 2.0, -2.0), r_wall_mat));
+        let right2 = Arc::new(Triangle::new(Vec3::new(2.0, 2.0, -2.0), Vec3::new(2.0, -2.0, 2.0), Vec3::new(2.0, 2.0, 2.0), r_wall_mat));
+        let bottom1 = Arc::new(Triangle::new(Vec3::new(2.0, -2.0, -2.0), Vec3::new(-2.0, -2.0, -2.0), Vec3::new(2.0, -2.0, 2.0), wall_mat));
+        let bottom2 = Arc::new(Triangle::new(Vec3::new(2.0, -2.0, 2.0), Vec3::new(-2.0, -2.0, -2.0), Vec3::new(-2.0, -2.0, 2.0), wall_mat));
+        let top1 = Arc::new(Triangle::new(Vec3::new(-2.0, 2.0, -2.0), Vec3::new(2.0, 2.0, -2.0),  Vec3::new(2.0, 2.0, 2.0), wall_mat));
+        let top2 = Arc::new(Triangle::new(Vec3::new(-2.0, 2.0, -2.0), Vec3::new(2.0, 2.0, 2.0),  Vec3::new(-2.0, 2.0, 2.0), wall_mat));
         // TODO: complete cornell box
-        let sphere1 = Arc::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, wall_mat2));
-        // note: there seems to be a bug in the BVH impl. somewhere - only the last triangle in bvh_elements shows up in the final rendering - further investigation showed that it happens for triangles that are flat along one of the planes of the coordinate system (here the x-y one)
-        // TODO: fix this
-        let bvh_elements: Vec<Arc<dyn Hitable>> = vec!(back1, back2, sphere1, back3);
+        let sphere1 = Arc::new(Sphere::new(Vec3::new(0.75, -1.25, 1.0), 0.75, noise_mat));
+        let bvh_elements: Vec<Arc<dyn Hitable>> = vec!(back1, back2, left1, left2, right1, right2, bottom1, bottom2, top1, top2, sphere1);
         let bvh = Arc::new(BVHNode::new(&bvh_elements, 0.0, 0.0));
         Arc::get_mut(&mut world).unwrap().extend([bvh as Arc<dyn Hitable>]);
     } else {

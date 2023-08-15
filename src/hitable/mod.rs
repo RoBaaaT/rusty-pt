@@ -240,6 +240,13 @@ impl Hitable for Triangle {
             min[dim] = if self.p2[dim] < min[dim] { self.p2[dim] } else { min[dim] };
             max[dim] = if self.p2[dim] > max[dim] { self.p2[dim] } else { max[dim] };
         }
+        // TODO: this is an ugly hack to support triangles that are axis-aligned in BVHs; can we fix this by instead improving the AABB::hit() code?
+        for dim in 0..3 {
+            if max[dim] - min[dim] < f32::EPSILON {
+                min[dim] -= 0.01;
+                max[dim] += 0.01;
+            }
+        }
         Some(AABB::new(min, max))
     }
 }
