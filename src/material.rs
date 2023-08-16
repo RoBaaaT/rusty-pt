@@ -3,15 +3,18 @@ use crate::hitable::*;
 use crate::texture::*;
 
 pub trait Material {
-    fn scatter(&self, ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray,
-        textures: &[Box<dyn Texture>]) -> bool;
+    fn scatter(&self, ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray, textures: &[Box<dyn Texture>]) -> bool;
+    fn emitted(&self, _u: f32, _v: f32, _p: &Vec3, _textures: &[Box<dyn Texture>]) -> Vec3 {
+        return Vec3::zero();
+    }
 }
 
 #[derive(Copy, Clone)]
 pub enum Materials {
     Lambertian(Lambertian),
     Metal(Metal),
-    Dielectric(Dielectric)
+    Dielectric(Dielectric),
+    DiffuseLight(DiffuseLight)
 }
 
 #[derive(Copy, Clone)]
@@ -28,6 +31,11 @@ pub struct Metal {
 #[derive(Copy, Clone)]
 pub struct Dielectric {
     pub refractive_index: Float
+}
+
+#[derive(Copy, Clone)]
+pub struct DiffuseLight {
+    pub emit: TextureId
 }
 
 
@@ -49,13 +57,28 @@ impl Dielectric {
     }
 }
 
+impl DiffuseLight {
+    pub fn new(emit: TextureId) -> DiffuseLight {
+        DiffuseLight { emit: emit }
+    }
+}
+
 impl Material for Materials {
-    fn scatter(&self, ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray,
-            textures: &[Box<dyn Texture>]) -> bool {
+    fn scatter(&self, ray_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3, scattered: &mut Ray, textures: &[Box<dyn Texture>]) -> bool {
         match self {
             Materials::Lambertian(lambertian) => lambertian.scatter(ray_in, rec, attenuation, scattered, textures),
             Materials::Metal(metal) => metal.scatter(ray_in, rec, attenuation, scattered, textures),
-            Materials::Dielectric(dielectric) => dielectric.scatter(ray_in, rec, attenuation, scattered, textures)
+            Materials::Dielectric(dielectric) => dielectric.scatter(ray_in, rec, attenuation, scattered, textures),
+            Materials::DiffuseLight(diffuse_light) => diffuse_light.scatter(ray_in, rec, attenuation, scattered, textures)
+        }
+    }
+
+    fn emitted(&self, u: f32, v: f32, p: &Vec3, textures: &[Box<dyn Texture>]) -> Vec3 {
+        match self {
+            Materials::Lambertian(lambertian) => lambertian.emitted(u, v, p, textures),
+            Materials::Metal(metal) => metal.emitted(u, v, p, textures),
+            Materials::Dielectric(dielectric) => dielectric.emitted(u, v, p, textures),
+            Materials::DiffuseLight(diffuse_light) => diffuse_light.emitted(u, v, p, textures)
         }
     }
 }
@@ -112,5 +135,15 @@ impl Material for Dielectric {
             *scattered = Ray::new(rec.p, reflected);
         }
         true
+    }
+}
+
+impl Material for DiffuseLight {
+    fn scatter(&self, _ray_in: &Ray, _rec: &HitRecord, _attenuation: &mut Vec3, _scattered: &mut Ray, _textures: &[Box<dyn Texture>]) -> bool {
+        return false;
+    }
+
+    fn emitted(&self, u: f32, v: f32, p: &Vec3, textures: &[Box<dyn Texture>]) -> Vec3 {
+        return textures[self.emit].value(u, v, p, textures);
     }
 }
